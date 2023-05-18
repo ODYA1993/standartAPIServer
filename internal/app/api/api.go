@@ -22,7 +22,7 @@ func NewAPI(config *Config) *API {
 	}
 }
 
-func (api *API) Start() (error error) {
+func (api *API) Start() error {
 	if err := api.configureLoggerField(); err != nil {
 		return err
 	}

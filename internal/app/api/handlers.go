@@ -17,22 +17,6 @@ type Message struct {
 	IsError    bool   `json:"is_error"`
 }
 
-func (api *API) GetAllUsers(w http.ResponseWriter, r *http.Request) {
-	api.logger.Info("Get All User GET /users")
-	user, err := api.storage.User().GetUsers()
-	if err != nil {
-		api.logger.Info("ошибка при User.GetAll", err)
-		msg := Message{
-			StatusCode: 501,
-			Message:    "Возникли некоторые проблемы с доступом к базе данных. Попробуйте позже..",
-			IsError:    true,
-		}
-		Json(w, msg, http.StatusNotImplemented)
-		return
-	}
-	Json(w, user, http.StatusOK)
-}
-
 func (api *API) PostUser(w http.ResponseWriter, req *http.Request) {
 	api.logger.Info("Post User POST /user")
 	var users models.User
@@ -47,7 +31,7 @@ func (api *API) PostUser(w http.ResponseWriter, req *http.Request) {
 		Json(w, msg, http.StatusBadRequest)
 		return
 	}
-	a, err := api.storage.User().CreateUSer(&users)
+	user, err := api.storage.User().CreateUSer(&users)
 	if err != nil {
 		api.logger.Info("Проблемы при создании нового пользователя")
 		msg := Message{
@@ -58,7 +42,23 @@ func (api *API) PostUser(w http.ResponseWriter, req *http.Request) {
 		Json(w, msg, http.StatusNotImplemented)
 		return
 	}
-	Json(w, a, http.StatusOK)
+	Json(w, user, http.StatusCreated)
+}
+
+func (api *API) GetAllUsers(w http.ResponseWriter, r *http.Request) {
+	api.logger.Info("Get All User GET /users")
+	user, err := api.storage.User().GetUsers()
+	if err != nil {
+		api.logger.Info("ошибка при User.GetAll", err)
+		msg := Message{
+			StatusCode: 501,
+			Message:    "Возникли некоторые проблемы с доступом к базе данных. Попробуйте позже..",
+			IsError:    true,
+		}
+		Json(w, msg, http.StatusNotImplemented)
+		return
+	}
+	Json(w, user, http.StatusOK)
 }
 
 func (api *API) GetUserByID(w http.ResponseWriter, req *http.Request) {
@@ -208,10 +208,7 @@ func (api *API) PostFriends(w http.ResponseWriter, req *http.Request) {
 	var friendInput models.Friends
 	err = json.Unmarshal(content, &friendInput)
 	if err != nil {
-		log.Println(err)
-	}
-	if err != nil {
-		api.logger.Info("Недопустимый json, полученный от клиента")
+		api.logger.Info("Недопустимый json, полученный от клиента", err)
 		msg := Message{
 			StatusCode: http.StatusBadRequest,
 			Message:    "Предоставленный json недействителен",
@@ -250,7 +247,7 @@ func (api *API) PostFriends(w http.ResponseWriter, req *http.Request) {
 		log.Println("Нету такого user")
 		return
 	}
-	Json(w, fmt.Sprintf("%v и %v теперь друзья", us.Name, fr.Name), http.StatusOK)
+	Json(w, fmt.Sprintf("%v и %v теперь друзья", us.Name, fr.Name), http.StatusCreated)
 }
 
 func (api *API) GetAllFriends(w http.ResponseWriter, req *http.Request) {
