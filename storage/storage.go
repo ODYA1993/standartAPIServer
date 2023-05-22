@@ -11,7 +11,7 @@ type Storage struct {
 	config            *Config
 	db                *sql.DB
 	userRepository    *UserRepository
-	friendsRepository *FriendsRepository
+	friendsRepository *FriendRepository
 }
 
 func NewStorage(config *Config) *Storage {
@@ -50,11 +50,11 @@ func (s *Storage) User() *UserRepository {
 	return s.userRepository
 }
 
-func (s *Storage) Friends() *FriendsRepository {
+func (s *Storage) Friends() *FriendRepository {
 	if s.friendsRepository != nil {
 		return s.friendsRepository
 	}
-	s.friendsRepository = &FriendsRepository{
+	s.friendsRepository = &FriendRepository{
 		storage: s,
 	}
 	return s.friendsRepository

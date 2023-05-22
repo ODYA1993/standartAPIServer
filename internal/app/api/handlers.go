@@ -148,7 +148,6 @@ func (api *API) DeleteUserByID(w http.ResponseWriter, req *http.Request) {
 		Message:    fmt.Sprintf("Пользователь с ID %d успешно удален", id),
 		IsError:    false,
 	}
-	//json.NewEncoder(rw).Encode(msg)
 	Json(w, msg, http.StatusAccepted)
 
 }
@@ -197,7 +196,7 @@ func (api *API) UpdateUserAgeByID(w http.ResponseWriter, req *http.Request) {
 }
 
 func (api *API) PostFriends(w http.ResponseWriter, req *http.Request) {
-	api.logger.Info("Post Friend POST /friends")
+	api.logger.Info("Post Friend POST /friend")
 	initHeaders(w)
 	defer req.Body.Close()
 

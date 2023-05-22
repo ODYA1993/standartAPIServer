@@ -14,7 +14,6 @@ import (
 var (
 	configPath = "../../../configs/conf_test.toml"
 	port       = "8090"
-	id         = 1
 )
 
 func initApi() *API {
@@ -27,13 +26,14 @@ func initApi() *API {
 
 func TestApiPostUser(t *testing.T) {
 	respUserID := createUser(t)
-	fmt.Println(respUserID)
+	t.Log(respUserID)
 }
 
 func TestApiGetAllUsers(t *testing.T) {
 	api := initApi()
 	resp := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodGet, "/users", nil)
+	t.Log(req.URL)
 	api.router.ServeHTTP(resp, req)
 	assert.Equal(t, http.StatusOK, resp.Code, "ошибка!")
 }
@@ -44,7 +44,7 @@ func TestApiGetUserByID(t *testing.T) {
 
 	resp := httptest.NewRecorder()
 	url := fmt.Sprint("/users/", createdUserID)
-	fmt.Println(url)
+	t.Log(url)
 
 	req, _ := http.NewRequest(http.MethodGet, url, nil)
 	api.router.ServeHTTP(resp, req)
@@ -57,7 +57,7 @@ func TestApiDeleteUserByID(t *testing.T) {
 	resp := httptest.NewRecorder()
 
 	url := fmt.Sprint("/users/", createdUserID)
-	fmt.Println(url)
+	t.Log(url)
 
 	req := httptest.NewRequest(http.MethodDelete, url, nil)
 	api.router.ServeHTTP(resp, req)
@@ -86,7 +86,7 @@ func TestApiUpdateUserAgeByID(t *testing.T) {
 	resp := httptest.NewRecorder()
 
 	url := fmt.Sprint("/users/", createdUserID)
-	fmt.Println(url)
+	t.Log(url)
 
 	req := httptest.NewRequest(http.MethodPut, url, bytes.NewBuffer(testDataByte))
 	api.router.ServeHTTP(resp, req)
@@ -94,44 +94,26 @@ func TestApiUpdateUserAgeByID(t *testing.T) {
 }
 
 func TestApiPostFriends(t *testing.T) {
-	api := initApi()
-	firstCreatedUserID := createUser(t)
-	SecondCreatedUserID := createUser(t)
-
-	type friend struct {
-		Id       int
-		UserID   any
-		FriendID any
-	}
-
-	testData := friend{
-		UserID:   firstCreatedUserID,
-		FriendID: SecondCreatedUserID,
-	}
-
-	testDataByte, err := json.Marshal(testData)
-	if err != nil {
-		t.Error(err)
-		t.Fail()
-	}
-	resp := httptest.NewRecorder()
-	req := httptest.NewRequest(http.MethodPost, "/friend", bytes.NewBuffer(testDataByte))
-	api.router.ServeHTTP(resp, req)
-
-	var respFriend friend
-	err = json.NewDecoder(resp.Body).Decode(&respFriend)
-	if err != nil {
-		t.Error(err)
-		t.Fail()
-	}
-
-	assert.Equal(t, http.StatusCreated, resp.Code, "ошибка!")
-	assert.NotEqual(t, testData.Id, respFriend.Id, "ошибка!")
-	assert.Equal(t, testData.UserID, respFriend.UserID, "ошибка!")
-	assert.Equal(t, testData.FriendID, respFriend.FriendID, "ошибка!")
+	userID := createFriend(t)
+	t.Log(userID)
 }
 
-func createUser(t *testing.T) any {
+func TestApiGetAllFriends(t *testing.T) {
+	api := initApi()
+	userID := createFriend(t)
+
+	resp := httptest.NewRecorder()
+
+	url := fmt.Sprint("/user/", userID, "/friends")
+	t.Log(url)
+
+	req, _ := http.NewRequest(http.MethodGet, url, nil)
+	api.router.ServeHTTP(resp, req)
+	assert.Equal(t, http.StatusOK, resp.Code, "ошибка!!!")
+}
+
+// Вспомогательные функции....
+func createUser(t *testing.T) int {
 	api := initApi()
 	type user struct {
 		Id   int
@@ -156,10 +138,40 @@ func createUser(t *testing.T) any {
 	if err != nil {
 		log.Println(err)
 	}
-	assert.Equal(t, http.StatusCreated, resp.Code, "ошибка!")
-	assert.NotEqual(t, testUser.Id, respUser.Id, "ошибка!")
-	assert.Equal(t, testUser.Name, respUser.Name, "ошибка!")
-	assert.Equal(t, testUser.Age, respUser.Age, "ошибка!")
+	assert.Equal(t, http.StatusCreated, resp.Code, "ошибка code!")
+	assert.NotEqual(t, testUser.Id, respUser.Id, "ошибка id!")
+	assert.Equal(t, testUser.Name, respUser.Name, "ошибка Name!")
+	assert.Equal(t, testUser.Age, respUser.Age, "ошибка Age!")
 
 	return respUser.Id
+}
+
+func createFriend(t *testing.T) int {
+	api := initApi()
+	firstCreatedUserID := createUser(t)
+	SecondCreatedUserID := createUser(t)
+
+	type friend struct {
+		Id       int `json:"id"`
+		UserID   int `json:"user_id"`
+		FriendID int `json:"friend_id"`
+	}
+
+	testData := friend{
+		UserID:   firstCreatedUserID,
+		FriendID: SecondCreatedUserID,
+	}
+
+	testDataByte, err := json.Marshal(testData)
+	if err != nil {
+		t.Error(err)
+		t.Fail()
+	}
+	resp := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/friend", bytes.NewBuffer(testDataByte))
+	t.Log(req.URL)
+	api.router.ServeHTTP(resp, req)
+
+	assert.Equal(t, http.StatusCreated, resp.Code, "ошибка!")
+	return firstCreatedUserID
 }

@@ -25,10 +25,10 @@ func (a *API) configureRouterField() {
 }
 
 func (a *API) configureStorageField() error {
-	storage := storage.NewStorage(a.config.Storage)
-	if err := storage.Open(); err != nil {
+	store := storage.NewStorage(a.config.Storage)
+	if err := store.Open(); err != nil {
 		return err
 	}
-	a.storage = storage
+	a.storage = store
 	return nil
 }

@@ -14,16 +14,16 @@ var (
 	tableUser = "users"
 )
 
-func (ur *UserRepository) CreateUSer(u *models.User) (*models.User, error) {
+func (ur *UserRepository) CreateUSer(user *models.User) (*models.User, error) {
 	query := fmt.Sprintf("INSERT INTO %s (name, age) VALUES($1, $2) RETURNING id", tableUser)
 	if err := ur.storage.db.QueryRow(
 		query,
-		u.Name,
-		u.Age,
-	).Scan(&u.ID); err != nil {
+		user.Name,
+		user.Age,
+	).Scan(&user.ID); err != nil {
 		return nil, err
 	}
-	return u, nil
+	return user, nil
 }
 
 func (ur *UserRepository) GetUserByID(id int) (*models.User, bool, error) {
