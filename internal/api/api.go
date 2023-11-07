@@ -11,7 +11,7 @@ type API struct {
 	config  *Config
 	logger  *logrus.Logger
 	router  chi.Router
-	storage *storage.Storage
+	storage storage.Storage
 }
 
 func NewAPI(config *Config) *API {
@@ -27,11 +27,10 @@ func (api *API) Start() error {
 		return err
 	}
 
-	api.logger.Infof("Запуск APIServer на порту %s", api.config.Port)
+	api.logger.Infof("Запуск APIServer на порту %s", api.config.PortAddr)
 	api.configureRouterField()
 	if err := api.configureStorageField(); err != nil {
 		return err
 	}
-
-	return http.ListenAndServe(api.config.Port, api.router)
+	return http.ListenAndServe(api.config.PortAddr, api.router)
 }

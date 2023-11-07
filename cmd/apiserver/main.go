@@ -1,27 +1,16 @@
 package main
 
 import (
-	"flag"
-	"github.com/DmitryOdintsov/standartAPI_Server/internal/app/api"
-	"log"
+	"github.com/DmitryOdintsov/standartAPI_Server/internal/api"
+	"github.com/sirupsen/logrus"
 )
-
-var (
-	ConfigPath string
-	Port       *string
-)
-
-func init() {
-	flag.StringVar(&ConfigPath, "path", "configs/conf.toml", "путь к конфигурационному файлу в .toml формате.")
-	Port = flag.String("port", "8085", "port number")
-}
 
 func main() {
-	flag.Parse()
-	config := api.NewConfig(ConfigPath, *Port)
+	config := api.NewConfig()
 	server := api.NewAPI(config)
 	err := server.Start()
 	if err != nil {
-		log.Println(err)
+		logrus.Println(err)
 	}
+
 }

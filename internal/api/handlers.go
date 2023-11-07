@@ -3,9 +3,10 @@ package api
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/DmitryOdintsov/standartAPI_Server/internal/app/models"
+	"github.com/DmitryOdintsov/standartAPI_Server/internal/models"
 	"github.com/go-chi/chi/v5"
 	"io"
+	"log"
 	"net/http"
 	"strconv"
 )
@@ -16,10 +17,40 @@ type Message struct {
 	IsError    bool   `json:"is_error"`
 }
 
-func (api *API) PostUser(w http.ResponseWriter, req *http.Request) {
-	api.logger.Info("Post User POST /user")
+func (api *API) GetUsersByAPI(w http.ResponseWriter, r *http.Request) {
+	api.logger.Info("Get Users GET/users/api")
+	resp, err := http.DefaultClient.Get("https://fakestoreapi.com/users")
+	if err != nil {
+		log.Println(err)
+	}
+	defer resp.Body.Close()
+
+	var users []models.User
+	err = json.NewDecoder(resp.Body).Decode(&users)
+	if err != nil {
+		log.Println(err)
+	}
+
+	for _, user := range users {
+		_, err := api.storage.User().CreateUser(&user)
+		if err != nil {
+			api.logger.Info("Проблемы при создании нового пользователя")
+			msg := Message{
+				StatusCode: http.StatusNotImplemented,
+				Message:    "Возникли проблемы с доступом к базе данных. Пробовать снова..",
+				IsError:    true,
+			}
+			Json(w, msg, http.StatusNotImplemented)
+			return
+		}
+	}
+	Json(w, users, http.StatusCreated)
+}
+
+func (api *API) PostUser(w http.ResponseWriter, r *http.Request) {
+	api.logger.Info("Post User POST/user")
 	var users models.User
-	err := json.NewDecoder(req.Body).Decode(&users)
+	err := json.NewDecoder(r.Body).Decode(&users)
 	if err != nil {
 		api.logger.Info("Недопустимый json, полученный от клиента")
 		msg := Message{
@@ -46,7 +77,7 @@ func (api *API) PostUser(w http.ResponseWriter, req *http.Request) {
 
 func (api *API) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 	initHeaders(w)
-	api.logger.Info("Get All Users GET /users")
+	api.logger.Info("Get All Users GET/users")
 	users, err := api.storage.User().GetUsers()
 	if err != nil {
 		api.logger.Infof("ошибка при User.GetAll %s", err)
@@ -65,7 +96,6 @@ func (api *API) GetUserByID(w http.ResponseWriter, req *http.Request) {
 	api.logger.Info("Get user by ID GET/user{id}")
 
 	id, err := strconv.Atoi(chi.URLParam(req, "id"))
-	fmt.Println("-----------", id)
 	if err != nil {
 		api.logger.Info("Проблемы при разборе параметра id")
 		msg := Message{
@@ -135,6 +165,30 @@ func (api *API) DeleteUserByID(w http.ResponseWriter, req *http.Request) {
 
 }
 
+func (api *API) DeleteUsers(w http.ResponseWriter, req *http.Request) {
+	api.logger.Info("Delete All Users DELETE/users")
+
+	ok, err := api.storage.User().DeleteAllUsers()
+	if err != nil {
+		api.logger.Info("Проблемы при удалении с базы данных (users)", err)
+		msg := Message{
+			StatusCode: http.StatusNotImplemented,
+			Message:    "Возникли проблемы с удалением из базы данных, попробуйте еще...",
+			IsError:    ok,
+		}
+		Json(w, msg, http.StatusNotImplemented)
+		return
+	}
+	w.WriteHeader(http.StatusAccepted)
+	msg := Message{
+		StatusCode: http.StatusAccepted,
+		Message:    fmt.Sprintf("Все данные успешно удалены"),
+		IsError:    ok,
+	}
+	Json(w, msg, http.StatusAccepted)
+
+}
+
 func (api *API) UpdateUserByID(w http.ResponseWriter, req *http.Request) {
 	api.logger.Info("Update user by ID PUT/user{id}")
 	id, err := strconv.Atoi(chi.URLParam(req, "id"))
@@ -151,7 +205,6 @@ func (api *API) UpdateUserByID(w http.ResponseWriter, req *http.Request) {
 	var user *models.User
 
 	content, err := io.ReadAll(req.Body)
-	fmt.Println("===================", string(content))
 	if err != nil {
 		api.logger.Info("Проблемы при считывании из body")
 		msg := Message{
@@ -174,6 +227,6 @@ func (api *API) UpdateUserByID(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	str := api.storage.User().UpdateUserAge(user, id)
+	str := api.storage.User().UpdateUser(user, id)
 	Json(w, str, http.StatusOK)
 }

@@ -4,14 +4,13 @@ import (
 	"database/sql"
 	"fmt"
 	_ "github.com/lib/pq"
-	"log"
+	"github.com/sirupsen/logrus"
 )
 
 type Storage struct {
-	config            *Config
-	db                *sql.DB
-	userRepository    *UserRepository
-	friendsRepository *FriendRepository
+	config         *Config
+	db             *sql.DB
+	userRepository *UserRepository
 }
 
 func NewStorage(config *Config) *Storage {
@@ -21,18 +20,16 @@ func NewStorage(config *Config) *Storage {
 }
 
 func (s *Storage) Open() error {
-	db, err := sql.Open("postgres", fmt.Sprintf("dbname=%s port=%s user=%s password=%s sslmode=%s", s.config.DBname, s.config.Port, s.config.User, s.config.Password, s.config.SSLmode))
+	db, err := sql.Open("postgres", fmt.Sprintf("dbname=%s port=%s user=%s password=%s sslmode=%s", s.config.DBname, s.config.Port, s.config.User, s.config.Password, s.config.Sslmode))
 	if err != nil {
 		return err
 	}
 
-	//Проверим, что все ок. Реально соединение тут не создается. Соединение только при первом вызове
-	//db.Ping() // Пустой SELECT *
 	if err = db.Ping(); err != nil {
 		return err
 	}
 	s.db = db
-	log.Println("Connection to db successfully")
+	logrus.Println("Успешное подключение к базе данных")
 	return nil
 }
 
@@ -48,14 +45,4 @@ func (s *Storage) User() *UserRepository {
 		storage: s,
 	}
 	return s.userRepository
-}
-
-func (s *Storage) Friends() *FriendRepository {
-	if s.friendsRepository != nil {
-		return s.friendsRepository
-	}
-	s.friendsRepository = &FriendRepository{
-		storage: s,
-	}
-	return s.friendsRepository
 }

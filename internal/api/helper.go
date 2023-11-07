@@ -15,10 +15,10 @@ func (a *API) configureLoggerField() error {
 }
 
 func (a *API) configureStorageField() error {
-	store := storage.NewStorage(a.config.Storage)
+	store := storage.NewStorage(&a.config.Storage)
 	if err := store.Open(); err != nil {
 		return err
 	}
-	a.storage = store
+	a.storage = *store
 	return nil
 }
